@@ -4,10 +4,10 @@ package devlight.io.library.behavior;
 import android.annotation.TargetApi;
 import android.os.Build;
 import android.os.Parcelable;
-import android.support.annotation.IntDef;
-import android.support.design.widget.CoordinatorLayout;
-import android.support.v4.view.WindowInsetsCompat;
 import android.view.View;
+import androidx.annotation.IntDef;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import androidx.core.view.WindowInsetsCompat;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -24,7 +24,7 @@ abstract class VerticalScrollingBehavior<V extends View> extends CoordinatorLayo
     private int mScrollDirection = ScrollDirection.SCROLL_NONE;
 
     @Retention(RetentionPolicy.SOURCE)
-    @IntDef({ScrollDirection.SCROLL_DIRECTION_UP, ScrollDirection.SCROLL_DIRECTION_DOWN})
+    @IntDef({ScrollDirection.SCROLL_DIRECTION_UP, ScrollDirection.SCROLL_DIRECTION_DOWN,ScrollDirection.SCROLL_NONE})
     @interface ScrollDirection {
         int SCROLL_DIRECTION_UP = 1;
         int SCROLL_DIRECTION_DOWN = -1;

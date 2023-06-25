@@ -13,81 +13,86 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-apply plugin: 'com.android.library'
-apply plugin: "com.jfrog.bintray"
-apply plugin: 'com.github.dcendents.android-maven'
-apply plugin: 'maven'
-
+plugins {
+    id 'com.android.library'
+}
 version = "1.2.5"
 
 android {
-    compileSdkVersion 27
-    buildToolsVersion '27.0.3'
+    compileSdk 31
 
     defaultConfig {
-        minSdkVersion 14
-        targetSdkVersion 27
-        versionCode 1
-        versionName "1.2.5"
+        minSdkVersion 19
+        targetSdkVersion 31
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles "consumer-rules.pro"
     }
+
     buildTypes {
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
+        baby {}
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 }
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-    //noinspection GradleDependency
-    implementation 'com.android.support:design:27.1.1'
+    // https://mvnrepository.com/artifact/androidx.viewpager2/viewpager2
+    implementation 'androidx.viewpager2:viewpager2:1.0.0'
+    implementation 'androidx.coordinatorlayout:coordinatorlayout:1.2.0'
+    implementation 'androidx.interpolator:interpolator:1.0.0'
+    implementation 'com.google.android.material:material:1.5.0'
 }
 
 def siteUrl = 'https://github.com/DevLight-Mobile-Agency/NavigationTabBar'
 def gitUrl = 'https://github.com/DevLight-Mobile-Agency/NavigationTabBar.git'
 group = "devlight.io"
 
-install {
-    repositories.mavenInstaller {
-        // This generates POM.xml with proper parameters
-        pom {
-            //noinspection GroovyAssignabilityCheck
-            project {
-                packaging 'aar'
-
-                // Add your description here
-                //noinspection GroovyAssignabilityCheck
-                name 'NavigationTabBar'
-                description = 'Navigation tab bar with colorful interactions.'
-                url siteUrl
-
-                // Set your license
-                licenses {
-                    license {
-                        //noinspection GroovyAssignabilityCheck
-                        name 'The Apache Software License, Version 2.0'
-                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                    }
-                }
-                developers {
-                    developer {
-                        id 'gigamole'
-                        //noinspection GroovyAssignabilityCheck
-                        name 'Basil Miller'
-                        email 'gigamole53@gmail.com'
-                    }
-                }
-                scm {
-                    connection gitUrl
-                    developerConnection gitUrl
-                    url siteUrl
-                }
-            }
-        }
-    }
-}
+//install {
+//    repositories.mavenInstaller {
+//        // This generates POM.xml with proper parameters
+//        pom {
+//            //noinspection GroovyAssignabilityCheck
+//            project {
+//                packaging 'aar'
+//
+//                // Add your description here
+//                //noinspection GroovyAssignabilityCheck
+//                name 'NavigationTabBar'
+//                description = 'Navigation tab bar with colorful interactions.'
+//                url siteUrl
+//
+//                // Set your license
+//                licenses {
+//                    license {
+//                        //noinspection GroovyAssignabilityCheck
+//                        name 'The Apache Software License, Version 2.0'
+//                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+//                    }
+//                }
+//                developers {
+//                    developer {
+//                        id 'gigamole'
+//                        //noinspection GroovyAssignabilityCheck
+//                        name 'Basil Miller'
+//                        email 'gigamole53@gmail.com'
+//                    }
+//                }
+//                scm {
+//                    connection gitUrl
+//                    developerConnection gitUrl
+//                    url siteUrl
+//                }
+//            }
+//        }
+//    }
+//}
 
 task sourcesJar(type: Jar) {
     //noinspection GroovyAssignabilityCheck
@@ -111,34 +116,34 @@ artifacts {
     archives sourcesJar
 }
 
-Properties properties = new Properties()
-properties.load(project.rootProject.file('local.properties').newDataInputStream())
-
-bintray {
-    user = properties.getProperty("bintray.user")
-    key = properties.getProperty("bintray.apikey")
-
-    configurations = ['archives']
-    pkg {
-        repo = "maven"
-        // it is the name that appears in bintray when logged
-        name = "ntb"
-        websiteUrl = siteUrl
-        vcsUrl = gitUrl
-        licenses = ["Apache-2.0"]
-        publish = true
-        //noinspection GroovyAssignabilityCheck
-        version {
-            gpg {
-                sign = true //Determines whether to GPG sign the files. The default is false
-                passphrase = properties.getProperty("bintray.gpg.password") //Optional. The passphrase for GPG signing'
-            }
-//            mavenCentralSync {
-//                sync = true //Optional (true by default). Determines whether to sync the version to Maven Central.
-//                user = properties.getProperty("bintray.oss.user") //OSS user token
-//                password = properties.getProperty("bintray.oss.password") //OSS user password
-//                close = '1' //Optional property. By default the staging repository is closed and artifacts are released to Maven Central. You can optionally turn this behaviour off (by puting 0 as value) and release the version manually.
+//Properties properties = new Properties()
+//properties.load(project.rootProject.file('local.properties').newDataInputStream())
+//
+//bintray {
+//    user = properties.getProperty("bintray.user")
+//    key = properties.getProperty("bintray.apikey")
+//
+//    configurations = ['archives']
+//    pkg {
+//        repo = "maven"
+//        // it is the name that appears in bintray when logged
+//        name = "ntb"
+//        websiteUrl = siteUrl
+//        vcsUrl = gitUrl
+//        licenses = ["Apache-2.0"]
+//        publish = true
+//        //noinspection GroovyAssignabilityCheck
+//        version {
+//            gpg {
+//                sign = true //Determines whether to GPG sign the files. The default is false
+//                passphrase = properties.getProperty("bintray.gpg.password") //Optional. The passphrase for GPG signing'
 //            }
-        }
-    }
-}
+////            mavenCentralSync {
+////                sync = true //Optional (true by default). Determines whether to sync the version to Maven Central.
+////                user = properties.getProperty("bintray.oss.user") //OSS user token
+////                password = properties.getProperty("bintray.oss.password") //OSS user password
+////                close = '1' //Optional property. By default the staging repository is closed and artifacts are released to Maven Central. You can optionally turn this behaviour off (by puting 0 as value) and release the version manually.
+////            }
+//        }
+//    }
+//}

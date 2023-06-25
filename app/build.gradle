@@ -1,13 +1,12 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 27
-    buildToolsVersion '27.0.3'
+    compileSdk 31
 
     defaultConfig {
         applicationId "devlight.io.navigationtabbar"
-        minSdkVersion 14
-        targetSdkVersion 27
+        minSdkVersion 19
+        targetSdkVersion 31
         versionCode 1
         versionName "1.0"
     }

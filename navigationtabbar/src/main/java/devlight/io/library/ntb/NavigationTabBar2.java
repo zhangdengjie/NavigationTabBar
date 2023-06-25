@@ -23,17 +23,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.TypedArray;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Matrix;
-import android.graphics.Paint;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffColorFilter;
-import android.graphics.PorterDuffXfermode;
-import android.graphics.Rect;
-import android.graphics.RectF;
-import android.graphics.Typeface;
+import android.graphics.*;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Parcel;
@@ -45,31 +35,28 @@ import android.view.MotionEvent;
 import android.view.SoundEffectConstants;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.AccelerateDecelerateInterpolator;
-import android.view.animation.AccelerateInterpolator;
-import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
-import android.view.animation.LinearInterpolator;
+import android.view.animation.*;
 import android.widget.Scroller;
-
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.view.ViewCompat;
 import androidx.interpolator.view.animation.LinearOutSlowInInterpolator;
 import androidx.viewpager.widget.ViewPager;
+import androidx.viewpager2.widget.ViewPager2;
 import com.gigamole.navigationtabbar.R;
+import devlight.io.library.behavior.NavigationTabBarBehavior2;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import devlight.io.library.behavior.NavigationTabBarBehavior;
-
 /**
  * Created by GIGAMOLE on 24.03.2016.
+ * 适配ViewPager2
  */
 @SuppressWarnings({"unused", "DefaultFileTemplate"})
-public class NavigationTabBar extends View implements ViewPager.OnPageChangeListener {
+public class NavigationTabBar2 extends View {
 
     // NTB constants
     protected final static int FLAGS =
@@ -143,7 +130,7 @@ public class NavigationTabBar extends View implements ViewPager.OnPageChangeList
     protected final Canvas mPointerCanvas = new Canvas();
 
     // External background view for the NTB
-    protected NavigationTabBarBehavior mBehavior;
+    protected NavigationTabBarBehavior2 mBehavior;
 
     // Detect if behavior already set
     protected boolean mIsBehaviorSet;
@@ -210,9 +197,14 @@ public class NavigationTabBar extends View implements ViewPager.OnPageChangeList
     protected final List<Model> mModels = new ArrayList<>();
 
     // Variables for ViewPager
-    protected ViewPager mViewPager;
+    protected ViewPager2 mViewPager;
+    // TODO: 2023/6/25 替换为自定义接口
     protected ViewPager.OnPageChangeListener mOnPageChangeListener;
     protected int mScrollState;
+
+    public void setOnPageChangeListener(ViewPager.OnPageChangeListener onPageChangeListener) {
+        this.mOnPageChangeListener = onPageChangeListener;
+    }
 
     // Tab listener
     protected OnTabBarSelectedIndexListener mOnTabBarSelectedIndexListener;
@@ -290,17 +282,61 @@ public class NavigationTabBar extends View implements ViewPager.OnPageChangeList
 
     // Custom typeface
     protected Typeface mTypeface;
+    private ViewPager2.OnPageChangeCallback pageChangeCallback = new ViewPager2.OnPageChangeCallback() {
+        @Override
+        public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+            super.onPageScrolled(position, positionOffset, positionOffsetPixels);
+            if (mOnPageChangeListener != null)
+                mOnPageChangeListener.onPageScrolled(position, positionOffset, positionOffsetPixels);
 
-    public NavigationTabBar(final Context context) {
+            // If we animate, don`t call this
+            if (!mIsSetIndexFromTabBar) {
+                mIsResizeIn = position < mIndex;
+                mLastIndex = mIndex;
+                mIndex = position;
+
+                mStartPointerX = position * mModelSize;
+                mEndPointerX = mStartPointerX + mModelSize;
+                updateIndicatorPosition(positionOffset);
+            }
+
+            // Stop scrolling on animation end and reset values
+            if (!mAnimator.isRunning() && mIsSetIndexFromTabBar) {
+                mFraction = MIN_FRACTION;
+                mIsSetIndexFromTabBar = false;
+            }
+        }
+
+        @Override
+        public void onPageSelected(int position) {
+            super.onPageSelected(position);
+        }
+
+        @Override
+        public void onPageScrollStateChanged(int state) {
+            super.onPageScrollStateChanged(state);
+            // If VP idle, reset to MIN_FRACTION
+            mScrollState = state;
+            if (state == ViewPager2.SCROLL_STATE_IDLE) {
+                if (mOnPageChangeListener != null) mOnPageChangeListener.onPageSelected(mIndex);
+                if (mIsViewPagerMode && mOnTabBarSelectedIndexListener != null)
+                    mOnTabBarSelectedIndexListener.onEndTabSelected(mModels.get(mIndex), mIndex);
+            }
+
+            if (mOnPageChangeListener != null) mOnPageChangeListener.onPageScrollStateChanged(state);
+        }
+    };
+
+    public NavigationTabBar2(final Context context) {
         this(context, null);
     }
 
-    public NavigationTabBar(final Context context, final AttributeSet attrs) {
+    public NavigationTabBar2(final Context context, final AttributeSet attrs) {
         this(context, attrs, 0);
     }
 
     @SuppressWarnings({"ResourceAsColor", "ResourceType"})
-    public NavigationTabBar(final Context context, final AttributeSet attrs, final int defStyleAttr) {
+    public NavigationTabBar2(final Context context, final AttributeSet attrs, final int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         //Init NTB
 
@@ -746,7 +782,7 @@ public class NavigationTabBar extends View implements ViewPager.OnPageChangeList
         mAnimator.addListener(mAnimatorListener);
     }
 
-    public void setViewPager(final ViewPager viewPager) {
+    public void setViewPager(final ViewPager2 viewPager) {
         // Detect whether ViewPager mode
         if (viewPager == null) {
             mIsViewPagerMode = false;
@@ -755,20 +791,19 @@ public class NavigationTabBar extends View implements ViewPager.OnPageChangeList
 
         if (viewPager.equals(mViewPager)) return;
         if (mViewPager != null) //noinspection deprecation
-            mViewPager.setOnPageChangeListener(null);
+            mViewPager.registerOnPageChangeCallback(null);
         if (viewPager.getAdapter() == null)
             throw new IllegalStateException("ViewPager does not provide adapter instance.");
 
         mIsViewPagerMode = true;
         mViewPager = viewPager;
-        mViewPager.removeOnPageChangeListener(this);
-        mViewPager.addOnPageChangeListener(this);
+        mViewPager.registerOnPageChangeCallback(pageChangeCallback);
 
         resetScroller();
         postInvalidate();
     }
 
-    public void setViewPager(final ViewPager viewPager, int index) {
+    public void setViewPager(final ViewPager2 viewPager, int index) {
         setViewPager(viewPager);
 
         mIndex = index;
@@ -780,17 +815,13 @@ public class NavigationTabBar extends View implements ViewPager.OnPageChangeList
     protected void resetScroller() {
         if (mViewPager == null) return;
         try {
-            final Field scrollerField = ViewPager.class.getDeclaredField("mScroller");
+            final Field scrollerField = ViewPager2.class.getDeclaredField("mScroller");
             scrollerField.setAccessible(true);
             final ResizeViewPagerScroller scroller = new ResizeViewPagerScroller(getContext());
             scrollerField.set(mViewPager, scroller);
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    public void setOnPageChangeListener(final ViewPager.OnPageChangeListener listener) {
-        mOnPageChangeListener = listener;
     }
 
     // Return if the behavior translation is enabled
@@ -804,7 +835,7 @@ public class NavigationTabBar extends View implements ViewPager.OnPageChangeList
 
         if (getParent() != null && getParent() instanceof CoordinatorLayout) {
             final ViewGroup.LayoutParams params = getLayoutParams();
-            if (mBehavior == null) mBehavior = new NavigationTabBarBehavior(enabled);
+            if (mBehavior == null) mBehavior = new NavigationTabBarBehavior2(enabled);
             else mBehavior.setBehaviorTranslationEnabled(enabled);
 
             ((CoordinatorLayout.LayoutParams) params).setBehavior(mBehavior);
@@ -916,7 +947,7 @@ public class NavigationTabBar extends View implements ViewPager.OnPageChangeList
         // Return if animation is running
         if (mAnimator.isRunning()) return true;
         // If is not idle state, return
-        if (mScrollState != ViewPager.SCROLL_STATE_IDLE) return true;
+        if (mScrollState != ViewPager2.SCROLL_STATE_IDLE) return true;
 
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
@@ -1559,47 +1590,6 @@ public class NavigationTabBar extends View implements ViewPager.OnPageChangeList
     }
 
     @Override
-    public void onPageScrolled(int position, float positionOffset, final int positionOffsetPixels) {
-        if (mOnPageChangeListener != null)
-            mOnPageChangeListener.onPageScrolled(position, positionOffset, positionOffsetPixels);
-
-        // If we animate, don`t call this
-        if (!mIsSetIndexFromTabBar) {
-            mIsResizeIn = position < mIndex;
-            mLastIndex = mIndex;
-            mIndex = position;
-
-            mStartPointerX = position * mModelSize;
-            mEndPointerX = mStartPointerX + mModelSize;
-            updateIndicatorPosition(positionOffset);
-        }
-
-        // Stop scrolling on animation end and reset values
-        if (!mAnimator.isRunning() && mIsSetIndexFromTabBar) {
-            mFraction = MIN_FRACTION;
-            mIsSetIndexFromTabBar = false;
-        }
-    }
-
-    @Override
-    public void onPageSelected(final int position) {
-        // This method is empty, because we call onPageSelected() when scroll state is idle
-    }
-
-    @Override
-    public void onPageScrollStateChanged(final int state) {
-        // If VP idle, reset to MIN_FRACTION
-        mScrollState = state;
-        if (state == ViewPager.SCROLL_STATE_IDLE) {
-            if (mOnPageChangeListener != null) mOnPageChangeListener.onPageSelected(mIndex);
-            if (mIsViewPagerMode && mOnTabBarSelectedIndexListener != null)
-                mOnTabBarSelectedIndexListener.onEndTabSelected(mModels.get(mIndex), mIndex);
-        }
-
-        if (mOnPageChangeListener != null) mOnPageChangeListener.onPageScrollStateChanged(state);
-    }
-
-    @Override
     public void onRestoreInstanceState(Parcelable state) {
         final SavedState savedState = (SavedState) state;
         super.onRestoreInstanceState(savedState.getSuperState());
@@ -1668,7 +1658,7 @@ public class NavigationTabBar extends View implements ViewPager.OnPageChangeList
     // Clamp value to max and min bounds
     protected float clampValue(final float value) {
         return Math.max(
-                Math.min(value, NavigationTabBar.MAX_FRACTION), NavigationTabBar.MIN_FRACTION
+                Math.min(value, NavigationTabBar2.MAX_FRACTION), NavigationTabBar2.MIN_FRACTION
         );
     }
 
