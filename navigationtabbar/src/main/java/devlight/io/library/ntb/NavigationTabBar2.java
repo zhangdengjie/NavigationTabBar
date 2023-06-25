@@ -1202,13 +1202,17 @@ public class NavigationTabBar2 extends View {
             final float leftTitleOffset;
             final float topTitleOffset;
             if (mIsHorizontalOrientation) {
+                // 暂时只处理横向布局
                 leftOffset = (mModelSize * i) + (mModelSize - model.mIcon.getWidth()) * 0.5F;
                 topOffset = (mBounds.height() - model.mIcon.getHeight()) * 0.5F;
 
                 // Set offset to titles
                 leftTitleOffset = (mModelSize * i) + (mModelSize * 0.5F);
+                // 当前业务需求 只需要显示title，所以title居中
+//                topTitleOffset =
+//                        mBounds.height() - (mBounds.height() - iconMarginTitleHeight) * 0.5F;
                 topTitleOffset =
-                        mBounds.height() - (mBounds.height() - iconMarginTitleHeight) * 0.5F;
+                        mBounds.height() - (mBounds.height() - mModelTitleSize)* 0.5F;
 
             } else {
                 leftOffset = (mBounds.width() - (float) model.mIcon.getWidth()) * 0.5F;
@@ -1333,17 +1337,20 @@ public class NavigationTabBar2 extends View {
             }
 
             // Draw original model icon
-            if (model.mSelectedIcon == null) {
-                if (model.mIcon != null && !model.mIcon.isRecycled())
+            boolean drawIcon = false;
+            if(drawIcon) {
+                if (model.mSelectedIcon == null) {
+                    if (model.mIcon != null && !model.mIcon.isRecycled())
+                        mIconsCanvas.drawBitmap(model.mIcon, model.mIconMatrix, mIconPaint);
+                } else if (mIconPaint.getAlpha() != MIN_ALPHA &&
+                        model.mIcon != null && !model.mIcon.isRecycled())
+                    // Draw original icon when is visible
                     mIconsCanvas.drawBitmap(model.mIcon, model.mIconMatrix, mIconPaint);
-            } else if (mIconPaint.getAlpha() != MIN_ALPHA &&
-                    model.mIcon != null && !model.mIcon.isRecycled())
-                // Draw original icon when is visible
-                mIconsCanvas.drawBitmap(model.mIcon, model.mIconMatrix, mIconPaint);
-            // Draw selected icon when exist and visible
-            if (mSelectedIconPaint.getAlpha() != MIN_ALPHA &&
-                    model.mSelectedIcon != null && !model.mSelectedIcon.isRecycled())
-                mIconsCanvas.drawBitmap(model.mSelectedIcon, model.mIconMatrix, mSelectedIconPaint);
+                // Draw selected icon when exist and visible
+                if (mSelectedIconPaint.getAlpha() != MIN_ALPHA &&
+                        model.mSelectedIcon != null && !model.mSelectedIcon.isRecycled())
+                    mIconsCanvas.drawBitmap(model.mSelectedIcon, model.mIconMatrix, mSelectedIconPaint);
+            }
             if (mIsTitled) mTitlesCanvas.drawText(
                     isInEditMode() ? PREVIEW_TITLE : model.getTitle(),
                     leftTitleOffset,
