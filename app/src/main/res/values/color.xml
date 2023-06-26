@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--  历史图表的tab indicator背景色  -->
+
+    <color name="bg_history_diagram_indicator">#4A4B4D</color>
+    <color name="history_diagram_active_text_color">#333333</color>
+    <color name="history_diagram_inactive_text_color">#999999</color>
+    <color name="bg_history_diagram_active_color">#CCCCCC</color>
+</resources>
